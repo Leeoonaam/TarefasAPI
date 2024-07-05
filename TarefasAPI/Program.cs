@@ -41,9 +41,20 @@ builder.Services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.Compa
 // Identity
 builder.Services.AddIdentity <ApplicationUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true;
+    options.SignIn.RequireConfirmedAccount = true; // Configurações de opções para Identity
 })
-.AddEntityFrameworkStores<TarefasContext>();
+.AddEntityFrameworkStores<TarefasContext>(); // Adiciona o armazenamento do Entity Framework para Identity usando o contexto do TarefasContext
+
+// configuração para redirecionamento para tela caso não esteja logado
+// Apresenta a mensagem correta de erro para 401: não auturizado por não estar logado, caso ocorra o erro 404 que por padrão o erro envia pra uma tela não existente
+builder.Services.ConfigureApplicationCookie(opt =>
+{
+    opt.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = 401;
+        return Task.CompletedTask;
+    };
+});
 
 var app = builder.Build();
 
