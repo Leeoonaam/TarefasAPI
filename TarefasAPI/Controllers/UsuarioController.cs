@@ -58,7 +58,7 @@ namespace TarefasAPI.Controllers
             }
         }
 
-        [HttpPost("cadastrar")] // Define a rota para o método de cadastro.
+        [HttpPost("")] // Define a rota para o método de cadastro vazio que é adotado para padrão.
         // Define a ação de cadastro, que aceita um objeto UsuarioDTO no corpo da requisição.
         public ActionResult Cadastrar([FromBody] UsuarioDTO usuarioDTO) 
         {
@@ -67,6 +67,7 @@ namespace TarefasAPI.Controllers
             {
                 ApplicationUser usuario = new ApplicationUser(); // Cria uma nova instância de ApplicationUser.
                 usuario.FullName = usuarioDTO.Nome; // Define o nome completo do usuário.
+                usuario.UserName = usuarioDTO.Email; // Define o user do usuario
                 usuario.Email = usuarioDTO.Email; // Define o email do usuário.
 
                 // Cria o usuário de forma assíncrona e obtém o resultado.

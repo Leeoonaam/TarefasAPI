@@ -1,7 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using TarefasAPI.Data;
+using TarefasAPI.Models;
 using TarefasAPI.Repositories;
 using TarefasAPI.Repositories.Contracts;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,15 +18,32 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//configuração de banco de dados local no projeto
-builder.Services.AddDbContext<TarefasContext>(op => { op.UseSqlite("Data Source=Data\\MinhasTarefas.db"); });
+// Configuração para suprimir o filtro de modelo inválido ao tratamento de erros
+builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
 
-//configuração para adicionar o mvc com compartinilidade
-builder.Services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_2);
+// Configuração de banco de dados local no projeto
+builder.Services.AddDbContext<TarefasContext>(options =>
+{
+    options.UseSqlite("Data Source=Data\\MinhasTarefas.db");
+});
 
-//configurãção de dependencia dos repositorios criados
+// Configuração de dependência dos repositórios criados
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ITarefaRepository, TarefaRepository>();
+
+// Configuração para adicionar o MVC com compatibilidade 
+builder.Services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_2)
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore; // adiciona a opção de loop no retorno do json para trativa de tarefas em um unico id de usuario
+    });
+
+// Identity
+builder.Services.AddIdentity <ApplicationUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+})
+.AddEntityFrameworkStores<TarefasContext>();
 
 var app = builder.Build();
 
@@ -32,7 +55,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseStatusCodePages();
+app.UseAuthentication(); // Certifique-se de que a autenticação é usada antes da autorização
 app.UseAuthorization();
 
 app.MapControllers();

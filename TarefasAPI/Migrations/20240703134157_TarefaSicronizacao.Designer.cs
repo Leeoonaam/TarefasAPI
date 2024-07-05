@@ -11,8 +11,8 @@ using TarefasAPI.Data;
 namespace TarefasAPI.Migrations
 {
     [DbContext(typeof(TarefasContext))]
-    [Migration("20240703134157_TarefaSicronizacao")]
-    partial class TarefaSicronizacao
+    [Migration("20240703134157_TarefaSincronizacao")]
+    partial class TarefaSincronizacao
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

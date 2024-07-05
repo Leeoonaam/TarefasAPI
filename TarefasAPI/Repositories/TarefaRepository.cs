@@ -16,16 +16,16 @@ namespace TarefasAPI.Repositories
         }
 
         // Método que restaura tarefas com base no usuário e na data da última sincronização.
-        public List<Tarefa> Restauracao(ApplicationUser usuario, DateTime dataUltSicronizacao) 
+        public List<Tarefa> Restauracao(ApplicationUser usuario, DateTime dataUltSincronizacao) 
         {
             // Cria uma consulta para obter as tarefas do usuário específico.
             var query = _banco.Tarefas.Where(a => a.UsuarioId == usuario.Id).AsQueryable();
 
             // Verifica se a data da última sincronização não é nula.
-            if (dataUltSicronizacao != null) 
+            if (dataUltSincronizacao != null) 
             {
                 // Filtra as tarefas criadas ou atualizadas desde a última sincronização.
-                query.Where(a => a.Criado >= dataUltSicronizacao || a.Atualizado >= dataUltSicronizacao); 
+                query.Where(a => a.Criado >= dataUltSincronizacao || a.Atualizado >= dataUltSincronizacao); 
             }
 
             // Executa a consulta e retorna a lista de tarefas.
@@ -33,11 +33,12 @@ namespace TarefasAPI.Repositories
         }
 
         // Método que sincroniza uma lista de tarefas.
-        public List<Tarefa> Sicronizacao(List<Tarefa> tarefas) 
+        public List<Tarefa> Sincronizacao(List<Tarefa> tarefas)
         {
             // Cadastro
-            var novastarefas = tarefas.Where(a => a.IdTarefaAPI == 0); // Seleciona as tarefas que não têm um ID definido (novas tarefas).
-            
+            var novastarefas = tarefas.Where(a => a.IdTarefaAPI == 0).ToList(); // Seleciona as tarefas que não têm um ID definido (novas tarefas).
+            var TarefasExcluidasAtualizadas = tarefas.Where(a => a.IdTarefaAPI != 0).ToList(); // Seleciona as tarefas que já têm um ID definido (tarefas existentes).
+
             // Verifica se há novas tarefas para cadastrar.
             if (novastarefas.Count() > 0)
             {
@@ -50,8 +51,6 @@ namespace TarefasAPI.Repositories
             }
 
             // Atualizacao
-            var TarefasExcluidasAtualizadas = tarefas.Where(a => a.IdTarefaAPI != 0); // Seleciona as tarefas que já têm um ID definido (tarefas existentes).
-
             // Verifica se há tarefas para atualizar.
             if (TarefasExcluidasAtualizadas.Count() > 0) 
             {

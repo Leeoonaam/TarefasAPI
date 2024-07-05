@@ -5,7 +5,7 @@
 namespace TarefasAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class TarefaSicronizacao : Migration
+    public partial class TarefaSincronizacao : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
