@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TarefasAPI.Models
+namespace TarefasAPI.V1.Models
 {
     public class Tarefa
     {
@@ -20,7 +20,7 @@ namespace TarefasAPI.Models
 
         //relacionamento com o application user
         [ForeignKey("Usuario")]
-        public string UsuarioId { get; set;} 
+        public string UsuarioId { get; set; }
 
         public virtual ApplicationUser Usuario { get; set; }
     }

@@ -1,14 +1,14 @@
 ﻿using TarefasAPI.Data;
-using TarefasAPI.Models;
-using TarefasAPI.Repositories.Contracts;
+using TarefasAPI.V1.Models;
+using TarefasAPI.V1.Repositories.Contracts;
 
-namespace TarefasAPI.Repositories
+namespace TarefasAPI.V1.Repositories
 {
     public class TokenRepository : ITokenRepository
     {
         private readonly TarefasContext _banco;
 
-        public TokenRepository(TarefasContext banco) 
+        public TokenRepository(TarefasContext banco)
         {
             _banco = banco;
         }

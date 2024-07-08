@@ -1,4 +1,4 @@
-﻿namespace TarefasAPI.Models
+﻿namespace TarefasAPI.V1.Models
 {
     public class TokenDTO
     {

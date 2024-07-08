@@ -1,14 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TarefasAPI.Models;
-using TarefasAPI.Repositories;
-using TarefasAPI.Repositories.Contracts;
+using TarefasAPI.V1.Repositories;
+using TarefasAPI.V1.Models;
+using TarefasAPI.V1.Repositories.Contracts;
 
-namespace TarefasAPI.Controllers 
+namespace TarefasAPI.V1.Controllers
 {
     [Route("api/[controller]")] // Define a rota base para o controlador.
     [ApiController] // Indica que este controlador é um controlador de API.
+    [ApiVersion("1.0")]
     // Herda de Controller, que é a classe base para controladores MVC.
     public class TarefaController : Controller
     {

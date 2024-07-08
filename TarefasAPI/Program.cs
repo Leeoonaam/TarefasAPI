@@ -1,8 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using TarefasAPI.Data;
-using TarefasAPI.Models;
-using TarefasAPI.Repositories;
-using TarefasAPI.Repositories.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +11,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.OpenApi.Models;
+using TarefasAPI.V1.Models;
+using TarefasAPI.V1.Repositories;
+using TarefasAPI.V1.Repositories.Contracts;
+using Microsoft.Extensions.PlatformAbstractions;
+using TarefasAPI.V1.Helpers.Swagger;
+using Swashbuckle.AspNetCore.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +54,86 @@ builder.Services.AddMvc(config => {
     {
         options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore; // adiciona a opção de loop no retorno do json para trativa de tarefas em um unico id de usuario
     });
+
+// adiciona configuração de versionamento da api
+builder.Services.AddApiVersioning(cfg =>
+{
+    cfg.ReportApiVersions = true; // retorna no cabeçalho uma lista de versão disponiveis para que o usuario possa migrar de acordo com sua documentação
+    //cfg.ApiVersionReader = new HeaderApiVersionReader("api-version"); // habilita a possibilidade de realizar a consulta utilizando o cabeçalho
+    cfg.AssumeDefaultVersionWhenUnspecified = true; // configuração para direciona o usuario para uma versão padrão, quando nao especifica na URL
+    cfg.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0); // definindo a versão padrão
+    //cfg.ApiVersionReader = new MediaTypeApiVersionReader();
+});
+
+// configuração do swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    // Configuração para Chave de API
+    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header, // cabeçalho
+        Type = SecuritySchemeType.ApiKey, // valor na tela
+        Name = "Authorization",
+        Description = "Insira o Json Web Token (JWT) para realizar autenticar (realize o login para captura do Token)"
+    });
+
+    var securityRequirement = new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                In = ParameterLocation.Header,
+                Scheme = "Bearer",
+                Name = "Authorization",
+                BearerFormat = "JWT"
+            },
+            new List<string>()
+        }
+    };
+
+    c.AddSecurityRequirement(securityRequirement);
+
+    // configuração para resolver o conflito de URL ou rotas, vai pegar o primeiro e deconsiderar os demais
+    c.ResolveConflictingActions(ApiDescription => ApiDescription.First());
+    //primeira versão | classe info para informações da API de sua escolha
+    c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "API - Minhas Tarefas - V1.0", Version = "v1.0" });
+
+    var CaminhoProjeto = PlatformServices.Default.Application.ApplicationBasePath;
+    var NomeProjeto = $"{PlatformServices.Default.Application.ApplicationName}.xml";
+    var CaminhoArquivoXMLComentario = Path.Combine(CaminhoProjeto,NomeProjeto);
+
+    // Localização do arquivo XML
+    var xmlFile = $"{System.AppDomain.CurrentDomain.BaseDirectory}TarefasAPI.xml";
+    if (File.Exists(xmlFile))
+    {
+        c.IncludeXmlComments(CaminhoArquivoXMLComentario);
+    }
+
+    // Define um predicado que determina se uma API específica (apiDesc) deve ser incluída em um documento de API (docName).
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        var actionApiVersionModel = apiDesc.ActionDescriptor?.GetApiVersion();
+        // significaria que esta ação não é versionada e deve ser incluída em todos os lugares
+        if (actionApiVersionModel == null)
+        {
+            return true;
+        }
+        if (actionApiVersionModel.DeclaredApiVersions.Any())
+        {
+            return actionApiVersionModel.DeclaredApiVersions.Any(V => $"v{V.ToString()}" == docName);
+        }
+        return actionApiVersionModel.ImplementedApiVersions.Any(V => $"v{V.ToString()}" == docName);
+    });
+
+    //filtragem por versão no swagger
+    c.OperationFilter<ApiVersionOperationFilter>();
+
+});
 
 //configura o [Authorize]
 builder.Services.AddAuthentication(opt =>
@@ -105,7 +189,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1.0/swagger.json", "V1.0");
+    });
 }
 
 app.UseAuthentication();

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TarefasAPI.Models
+namespace TarefasAPI.V1.Models
 {
     public class Token
     {

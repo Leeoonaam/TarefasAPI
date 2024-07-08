@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using TarefasAPI.Models;
+using TarefasAPI.V1.Models;
 
 namespace TarefasAPI.Data
 {

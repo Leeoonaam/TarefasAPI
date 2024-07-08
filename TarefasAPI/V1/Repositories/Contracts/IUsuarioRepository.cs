@@ -1,10 +1,10 @@
-﻿using TarefasAPI.Models;
+﻿using TarefasAPI.V1.Models;
 
-namespace TarefasAPI.Repositories.Contracts
+namespace TarefasAPI.V1.Repositories.Contracts
 {
     public interface IUsuarioRepository
     {
-        void Cadastrar(ApplicationUser usuario,string senha);
+        void Cadastrar(ApplicationUser usuario, string senha);
 
         ApplicationUser Obter(string email, string senha);
 

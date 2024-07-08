@@ -1,6 +1,6 @@
-﻿using TarefasAPI.Models;
+﻿using TarefasAPI.V1.Models;
 
-namespace TarefasAPI.Repositories.Contracts
+namespace TarefasAPI.V1.Repositories.Contracts
 {
     public interface ITokenRepository
     {

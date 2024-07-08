@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TarefasAPI.Models
+namespace TarefasAPI.V1.Models
 {
     public class ApplicationUser : IdentityUser
     {
