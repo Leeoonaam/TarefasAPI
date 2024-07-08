@@ -52,5 +52,10 @@ namespace TarefasAPI.Repositories
                 throw new Exception($"Usuário não cadastrado! Erro: {sb.ToString()}"); 
             }
         }
+
+        public ApplicationUser Obter(string id)
+        {
+            return _userManager.FindByIdAsync(id).Result; // Busca o usuário pelo email de forma assíncrona e obtém o resultado.
+        }
     }
 }

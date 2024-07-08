@@ -1,9 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity; 
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding; 
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
-using TarefasAPI.Models; 
+using TarefasAPI.Migrations;
+using TarefasAPI.Models;
+using TarefasAPI.Repositories;
 using TarefasAPI.Repositories.Contracts; 
 
 namespace TarefasAPI.Controllers 
@@ -16,12 +21,14 @@ namespace TarefasAPI.Controllers
         private readonly IUsuarioRepository _usuarioRepository; // Declara uma variável privada somente leitura do tipo IUsuarioRepository.
         private readonly SignInManager<ApplicationUser> _signInManager; // Declara uma variável privada somente leitura do tipo SignInManager<ApplicationUser>.
         private readonly UserManager<ApplicationUser> _userManager; // Declara uma variável privada somente leitura do tipo UserManager<ApplicationUser>.
+        private readonly ITokenRepository _tokenRepository; //Declara uma variável privada somente leitura do tipo ItokenRepository.
 
-        public UsuarioController(IUsuarioRepository usuarioRepository, SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+        public UsuarioController(IUsuarioRepository usuarioRepository, SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, ITokenRepository tokenRepository)
         {
             _usuarioRepository = usuarioRepository; // Inicializa a variável _usuarioRepository com o valor passado ao construtor.
             _signInManager = signInManager; // Inicializa a variável _signInManager com o valor passado ao construtor.
             _userManager = userManager; // Inicializa a variável _userManager com o valor passado ao construtor.
+            _tokenRepository = tokenRepository; //Inicializa a variável _tokenRepository com o valor passado ao construtor.
         }
 
         [HttpPost("login")] // Define a rota para o método de login.
@@ -38,12 +45,14 @@ namespace TarefasAPI.Controllers
                 ApplicationUser usuario = _usuarioRepository.Obter(usuarioDTO.Email, usuarioDTO.Senha);
 
                 // Verifica se o usuário foi encontrado.
-                if (usuario != null) 
+                if (usuario != null)
                 {
-                    // Realiza o login do usuário.
-                    _signInManager.SignInAsync(usuario, false);
-                    // Retorna um status 200 OK.
-                    return Ok(); 
+                    // REMOVE PARA USAR O JTW
+                    // Realiza o login do usuário identity.
+                    //_signInManager.SignInAsync(usuario, false);
+
+                    // Chama o metodo para gerar o token
+                    return GerarToken(usuario);
                 }
                 else
                 {
@@ -57,6 +66,29 @@ namespace TarefasAPI.Controllers
                 return UnprocessableEntity(ModelState); 
             }
         }
+
+        [HttpPost("Renovar")]
+        public ActionResult Renovar([FromBody]TokenDTO tokenDTO) 
+        {
+            var refreshTokenDB = _tokenRepository.Obter(tokenDTO.RefreshToken);
+
+            if (refreshTokenDB == null)
+            {
+                return NotFound();
+            }
+
+            //refreshtoken antigo - atualizar(desativar refresh)
+            refreshTokenDB.Atualizado = DateTime.Now;
+            refreshTokenDB.Utilizado = true;
+            _tokenRepository.Atualizar(refreshTokenDB);
+
+            //gerar um novo/refresh tokn e salvar
+            // Chama o metodo para gerar o token
+            var usuario = _usuarioRepository.Obter(refreshTokenDB.UsuarioId);
+            
+            return GerarToken(usuario);
+        }
+
 
         [HttpPost("")] // Define a rota para o método de cadastro vazio que é adotado para padrão.
         // Define a ação de cadastro, que aceita um objeto UsuarioDTO no corpo da requisição.
@@ -100,6 +132,75 @@ namespace TarefasAPI.Controllers
                 // Retorna um status 422 Unprocessable Entity com o estado do modelo.
                 return UnprocessableEntity(ModelState); 
             }
+        }
+
+
+        /// <summary>
+        /// Método que gera um token JWT para um usuário específico
+        /// </summary>
+        /// <param name="usuario"></param>
+        /// <returns></returns>
+        public TokenDTO BuildToken(ApplicationUser usuario)
+        {
+            // Definição das claims do token, que são declarações sobre o usuário (email e id do usuário)
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, usuario.Id)
+            };
+
+            // Chave usada para criptografia do token (deve ter pelo menos 32 caracteres)
+            // Recomenda-se armazenar esta chave no arquivo appsettings.json para maior segurança e flexibilidade
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("chave-api-jwt-minhas-tarefas-e-com-no-minimo-32-caracteres"));
+            var sign = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var exp = DateTime.UtcNow.AddHours(1);
+
+            // Criação do token JWT com os parâmetros especificados (issuer, audience, claims, expiração e assinatura)
+            JwtSecurityToken token = new JwtSecurityToken(
+                issuer: null, //dominio
+                audience: null, //quem recebe o dominio
+                claims: claims,
+                expires: exp, // expiração de uma hora
+                signingCredentials: sign
+            );
+            // Geração do token JWT como uma string
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            var refreshToken = Guid.NewGuid().ToString();
+            var expRefreshToken = DateTime.UtcNow.AddHours(2);
+
+
+            var tokenDTO = new TokenDTO { Token = tokenString, Expiration = exp, ExpirationRefreshToken = expRefreshToken, RefreshToken = refreshToken };
+
+
+
+
+            // Retorno de um objeto anônimo contendo o token e a data de expiração
+            return (tokenDTO);
+        }
+
+        /// <summary>
+        /// Metodo para gerar token
+        /// </summary>
+        /// <param name="usuario"></param>
+        /// <returns></returns>
+        private ActionResult GerarToken(ApplicationUser usuario)
+        {
+            var token = BuildToken(usuario);
+
+            //Gera uma noca e salva o token no banco
+            var tokenModel = new Models.Token()
+            {
+                RefreshToken = token.RefreshToken,
+                ExpirationToken = token.Expiration,
+                ExpirationRefreshToken = token.ExpirationRefreshToken,
+                Usuario = usuario,
+                Criado = DateTime.Now,
+                Utilizado = false
+            };
+            _tokenRepository.Cadastrar(tokenModel);
+
+            return Ok(token);
         }
     }
 }

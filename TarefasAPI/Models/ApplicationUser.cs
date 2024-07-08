@@ -9,5 +9,8 @@ namespace TarefasAPI.Models
 
         [ForeignKey("UsuarioId")]
         public virtual ICollection<Tarefa> Tarefas { get; set; } //relacionamento com tarefas por meio dessa propriedade
+
+        [ForeignKey("UsuarioId")]
+        public virtual ICollection<Token> Tokens { get; set; } //relacionamento com tarefas por meio dessa propriedade
     }
 }

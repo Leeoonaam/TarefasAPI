@@ -13,5 +13,6 @@ namespace TarefasAPI.Data
         }
 
         public DbSet<Tarefa> Tarefas { get; set; }
+        public DbSet<Token> Token { get; set; }
     }
 }
