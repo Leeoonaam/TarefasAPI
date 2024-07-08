@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Formatters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,7 +39,13 @@ builder.Services.AddScoped<ITarefaRepository, TarefaRepository>();
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 
 // Configuração para adicionar o MVC com compatibilidade 
-builder.Services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_2)
+builder.Services.AddMvc(config => { 
+    //configuração para utilizar XML
+    config.ReturnHttpNotAcceptable = true;
+    config.InputFormatters.Add(new XmlSerializerInputFormatter(config)); // XML de entrada
+    config.OutputFormatters.Add(new XmlSerializerOutputFormatter()); // XML de saida
+})
+    .SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_2)
     .AddNewtonsoftJson(options =>
     {
         options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore; // adiciona a opção de loop no retorno do json para trativa de tarefas em um unico id de usuario
